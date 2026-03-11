@@ -6,11 +6,24 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "setupFiles": [
+      "./jest.setup.js"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.test.(ts|tsx)"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|lunar-javascript)"
+    ]
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
-    "@react-native-async-storage/async-storage": "^3.0.1",
     "expo": "~55.0.5",
     "expo-file-system": "~55.0.10",
     "expo-image-picker": "~55.0.11",
@@ -25,7 +38,18 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@babel/plugin-transform-flow-strip-types": "^7.27.1",
+    "@babel/preset-env": "^7.29.0",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
+    "@react-native-async-storage/async-storage": "^3.0.1",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.2.2",
+    "babel-preset-expo": "^55.0.11",
+    "jest": "^30.3.0",
+    "jest-expo": "^55.0.9",
     "typescript": "~5.9.2"
   },
   "private": true
