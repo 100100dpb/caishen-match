@@ -25,6 +25,36 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "scheme": "caishen-match",
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#C9A84C"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow 财神配对 to save wallpapers to your photos.",
+          "savePhotosPermission": "Allow 财神配对 to save wallpapers to your photos."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow 财神配对 to access your location for feng shui direction analysis."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow 财神配对 to access your photos for outfit analysis."
+        }
+      ]
+    ]
   }
 }
