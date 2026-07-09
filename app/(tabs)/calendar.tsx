@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { useState } from 'react';
-import { getLunarInfo } from '../../lib/lunarHelper';
+import { useRouter } from 'expo-router';
+import { useMemo, useState } from 'react';
+import { getLunarInfo, LunarInfo } from '../../lib/lunarHelper';
+import { recommendToday } from '../../lib/recommender';
 import { useUserStore } from '../../store/userStore';
 import { GODS } from '../../constants/gods';
 
@@ -24,40 +26,50 @@ function getFirstDayOfWeek(year: number, month: number) {
   return new Date(year, month, 1).getDay();
 }
 
-// Simple lucky day check based on common worship days
-function isDailyWorship(day: number): boolean {
-  return [1, 2, 15, 16].includes(day);
-}
-
-function isBusinessLucky(day: number): boolean {
-  return [8, 18, 28].includes(day);
-}
-
 export default function CalendarScreen() {
+  const router = useRouter();
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selectedDay, setSelectedDay] = useState<number | null>(today.getDate());
 
   const { profile } = useUserStore();
-  const topGod = profile.godRanking[0];
-  const god = topGod ? GODS[topGod.godId] : null;
 
   const daysInMonth = getDaysInMonth(viewYear, viewMonth);
   const firstDow = getFirstDayOfWeek(viewYear, viewMonth);
 
+  // 整月农历信息（含节日/宜忌），月份切换时重算
+  const monthLunar = useMemo<LunarInfo[]>(
+    () =>
+      Array.from({ length: daysInMonth }, (_, i) =>
+        getLunarInfo(new Date(viewYear, viewMonth, i + 1, 12))
+      ),
+    [viewYear, viewMonth, daysInMonth]
+  );
+
   function prevMonth() {
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
     else setViewMonth(m => m - 1);
+    setSelectedDay(null);
   }
 
   function nextMonth() {
     if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
     else setViewMonth(m => m + 1);
+    setSelectedDay(null);
   }
 
-  const selectedDate = selectedDay ? new Date(viewYear, viewMonth, selectedDay) : today;
-  const lunar = getLunarInfo(selectedDate);
+  const selectedDate = selectedDay
+    ? new Date(viewYear, viewMonth, selectedDay, 12)
+    : null;
+  const selectedLunar = selectedDay ? monthLunar[selectedDay - 1] : null;
+
+  // 选中日的推荐财神（未测试则不展示）
+  const dayGod = useMemo(() => {
+    if (!selectedDate || !profile.quizCompleted) return null;
+    const recs = recommendToday(profile.godRanking, selectedDate);
+    return { god: GODS[recs[0].godId], reasons: recs[0].reasons };
+  }, [selectedDate?.getTime(), profile.godRanking, profile.quizCompleted]);
 
   const cells: (number | null)[] = [
     ...Array(firstDow).fill(null),
@@ -98,16 +110,19 @@ export default function CalendarScreen() {
         {cells.map((day, i) => {
           if (!day) return <View key={`empty-${i}`} style={styles.dayCell} />;
 
-          const isToday = day === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
+          const lunar = monthLunar[day - 1];
+          const isToday =
+            day === today.getDate() &&
+            viewMonth === today.getMonth() &&
+            viewYear === today.getFullYear();
           const isSelected = day === selectedDay;
-          const worship = isDailyWorship(day);
-          const lucky = isBusinessLucky(day);
 
           return (
             <TouchableOpacity
               key={day}
               style={[
                 styles.dayCell,
+                lunar.isCaishenDay && styles.dayCellCaishen,
                 isSelected && styles.dayCellSelected,
                 isToday && !isSelected && styles.dayCellToday,
               ]}
@@ -116,8 +131,13 @@ export default function CalendarScreen() {
               <Text style={[styles.dayNum, isSelected && styles.dayNumSelected]}>
                 {day}
               </Text>
-              {worship && <View style={[styles.dot, { backgroundColor: '#C9A84C' }]} />}
-              {lucky && !worship && <View style={[styles.dot, { backgroundColor: '#4CAF50' }]} />}
+              {lunar.isCaishenDay ? (
+                <Text style={styles.dayMark}>财</Text>
+              ) : lunar.festival ? (
+                <View style={[styles.dot, { backgroundColor: '#E05C1A' }]} />
+              ) : lunar.isAuspicious ? (
+                <View style={[styles.dot, { backgroundColor: '#C9A84C' }]} />
+              ) : null}
             </TouchableOpacity>
           );
         })}
@@ -126,51 +146,75 @@ export default function CalendarScreen() {
       {/* Legend */}
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#C9A84C' }]} />
-          <Text style={styles.legendText}>拜财神吉日（初一、初二、十五、十六）</Text>
+          <Text style={styles.legendMark}>财</Text>
+          <Text style={styles.legendText}>财神日（迎财神 / 财神节）</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />
-          <Text style={styles.legendText}>旺财数（8、18、28日）</Text>
+          <View style={[styles.legendDot, { backgroundColor: '#E05C1A' }]} />
+          <Text style={styles.legendText}>传统节日</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: '#C9A84C' }]} />
+          <Text style={styles.legendText}>宜祭祀 — 拜财神吉日</Text>
         </View>
       </View>
 
       {/* Day detail */}
-      {selectedDay && (
+      {selectedDay && selectedLunar && (
         <View style={styles.dayDetail}>
           <Text style={styles.dayDetailTitle}>
-            {viewMonth + 1}月{selectedDay}日 · 农历{lunar.monthGanZhi}月{lunar.dayGanZhi}
+            {viewMonth + 1}月{selectedDay}日 · 农历{selectedLunar.monthGanZhi}月{selectedLunar.dayGanZhi}
           </Text>
-          {lunar.festival && (
-            <Text style={styles.dayFestival}>{lunar.festival}</Text>
+          {selectedLunar.festival && (
+            <Text style={styles.dayFestival}>
+              {selectedLunar.isCaishenDay ? '【财神日】' : ''}{selectedLunar.festival}
+            </Text>
           )}
-          {lunar.term && (
-            <Text style={styles.dayTerm}>节气：{lunar.term}</Text>
-          )}
+          {selectedLunar.term && <Text style={styles.dayTerm}>节气：{selectedLunar.term}</Text>}
 
           <View style={styles.dayAdviceRow}>
             <View style={[styles.dayAdviceBox, { backgroundColor: '#F0FFF4' }]}>
               <Text style={styles.dayAdviceLabel}>今日宜</Text>
               <Text style={styles.dayAdviceText}>
-                {isDailyWorship(selectedDay) ? '拜财神、祈福' : ''}
-                {isBusinessLucky(selectedDay) ? '开业、签约' : ''}
-                {!isDailyWorship(selectedDay) && !isBusinessLucky(selectedDay) ? '日常守财' : ''}
+                {selectedLunar.yi.slice(0, 4).join('、') || '—'}
               </Text>
             </View>
             <View style={[styles.dayAdviceBox, { backgroundColor: '#FFF5F5' }]}>
               <Text style={styles.dayAdviceLabel}>今日忌</Text>
               <Text style={styles.dayAdviceText}>
-                {lunar.isAuspicious ? '冲动消费' : '大额投资、借贷'}
+                {selectedLunar.ji.slice(0, 4).join('、') || '—'}
               </Text>
             </View>
           </View>
 
-          {god && (
-            <View style={[styles.dayGodCard, { borderLeftColor: god.color, backgroundColor: god.bgColor }]}>
-              <Text style={styles.dayGodLabel}>今日推荐财神</Text>
-              <Text style={[styles.dayGodName, { color: god.color }]}>{god.name}</Text>
-              <Text style={styles.dayGodTitle}>{god.title}</Text>
-            </View>
+          {selectedLunar.isAuspicious && (
+            <Text style={styles.worshipHint}>今日宜祭祀，适合拜财神、祈财纳福</Text>
+          )}
+
+          {dayGod ? (
+            <TouchableOpacity
+              style={[styles.dayGodCard, { borderLeftColor: dayGod.god.color, backgroundColor: dayGod.god.bgColor }]}
+              onPress={() => router.push(`/wallpaper/${dayGod.god.id}`)}
+            >
+              <Text style={styles.dayGodLabel}>当日推荐财神</Text>
+              <Text style={[styles.dayGodName, { color: dayGod.god.color }]}>{dayGod.god.name}</Text>
+              <Text style={styles.dayGodTitle}>{dayGod.god.title}</Text>
+              {dayGod.reasons.length > 0 && (
+                <View style={styles.reasonRow}>
+                  {dayGod.reasons.map(r => (
+                    <View key={r} style={styles.reasonChip}>
+                      <Text style={styles.reasonText}>{r}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </TouchableOpacity>
+          ) : (
+            !profile.quizCompleted && (
+              <TouchableOpacity style={styles.quizHint} onPress={() => router.push('/quiz')}>
+                <Text style={styles.quizHintText}>完成财神测试，查看每日专属推荐 →</Text>
+              </TouchableOpacity>
+            )
           )}
         </View>
       )}
@@ -216,15 +260,24 @@ const styles = StyleSheet.create({
     borderRadius: DAY_SIZE / 2,
     position: 'relative',
   },
+  dayCellCaishen: { backgroundColor: '#FFF3CD' },
   dayCellSelected: { backgroundColor: '#C9A84C' },
   dayCellToday: { borderWidth: 1.5, borderColor: '#C9A84C' },
   dayNum: { fontSize: 15, color: '#2C1810', fontWeight: '500' },
   dayNumSelected: { color: '#fff', fontWeight: '700' },
   dot: { width: 4, height: 4, borderRadius: 2, position: 'absolute', bottom: 4 },
+  dayMark: {
+    position: 'absolute',
+    bottom: 2,
+    fontSize: 8,
+    color: '#B22222',
+    fontWeight: '800',
+  },
 
   legend: { paddingHorizontal: 16, marginTop: 12, gap: 4 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendMark: { fontSize: 10, color: '#B22222', fontWeight: '800', width: 8, textAlign: 'center' },
   legendText: { fontSize: 12, color: '#888' },
 
   dayDetail: {
@@ -239,14 +292,33 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   dayDetailTitle: { fontSize: 16, fontWeight: '700', color: '#2C1810', marginBottom: 4 },
-  dayFestival: { fontSize: 13, color: '#C9A84C', fontWeight: '600', marginBottom: 2 },
-  dayTerm: { fontSize: 13, color: '#8B6914', marginBottom: 12 },
-  dayAdviceRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  dayFestival: { fontSize: 13, color: '#B22222', fontWeight: '600', marginBottom: 2 },
+  dayTerm: { fontSize: 13, color: '#8B6914', marginBottom: 8 },
+  dayAdviceRow: { flexDirection: 'row', gap: 10, marginTop: 8, marginBottom: 10 },
   dayAdviceBox: { flex: 1, borderRadius: 12, padding: 12 },
   dayAdviceLabel: { fontSize: 12, color: '#888', marginBottom: 4, fontWeight: '600' },
   dayAdviceText: { fontSize: 13, color: '#333', lineHeight: 18 },
+  worshipHint: { fontSize: 12, color: '#8B6914', marginBottom: 10 },
+
   dayGodCard: { borderRadius: 12, padding: 12, borderLeftWidth: 3 },
   dayGodLabel: { fontSize: 11, color: '#888', marginBottom: 4 },
   dayGodName: { fontSize: 20, fontWeight: '700' },
   dayGodTitle: { fontSize: 12, color: '#666', marginTop: 2 },
+  reasonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  reasonChip: {
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  reasonText: { fontSize: 11, color: '#8B6914', fontWeight: '600' },
+
+  quizHint: {
+    backgroundColor: '#FFF8E7',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#F0E0A0',
+  },
+  quizHintText: { fontSize: 13, color: '#8B6914', fontWeight: '600', textAlign: 'center' },
 });
