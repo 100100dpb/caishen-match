@@ -17,7 +17,16 @@ describe('gods database', () => {
       expect(Array.isArray(god.tags)).toBe(true);
       expect(god.tags.length).toBeGreaterThan(0);
       expect(Array.isArray(god.affinity)).toBe(true);
+      expect(god.blessing.length).toBeGreaterThanOrEqual(3);
+      god.blessing.forEach(b => expect(b.length).toBeGreaterThan(0));
+      expect(god.accessories.length).toBeGreaterThanOrEqual(3);
+      god.accessories.forEach(a => expect(a.length).toBeGreaterThan(0));
     });
+  });
+
+  it('every element has at least one god', () => {
+    const elements = new Set(GOD_LIST.map(g => g.element));
+    expect(elements).toEqual(new Set(['fire', 'water', 'wood', 'earth', 'metal']));
   });
 
   it('god id in GODS record matches the id field', () => {

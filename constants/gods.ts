@@ -26,6 +26,8 @@ export interface God {
   bgColor: string;
   tags: string[];
   affinity: string[]; // user desire types this god is good for
+  blessing: string[]; // 吉语池 — wallpaper text, picked deterministically by date
+  accessories: string[]; // 开运配饰建议
 }
 
 export const GODS: Record<GodId, God> = {
@@ -39,6 +41,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#FFF8E7',
     tags: ['正财', '武财神', '职场', '升职'],
     affinity: ['正财', '薪资', '升职', '职场'],
+    blessing: ['正财广进 步步高升', '武财护佑 财源滚滚', '踏实聚财 稳中有升'],
+    accessories: ['黄玉貔貅', '金色钱包', '铜钱手链'],
   },
   guan: {
     id: 'guan',
@@ -50,6 +54,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#FFF0F0',
     tags: ['生意', '护法', '义财', '辟邪'],
     affinity: ['生意', '辟邪', '护财', '合作'],
+    blessing: ['义气生财 生意兴隆', '关帝护佑 百无禁忌', '诚信立业 客似云来'],
+    accessories: ['红绳手链', '关刀吊坠', '朱砂平安扣'],
   },
   bigan: {
     id: 'bigan',
@@ -61,6 +67,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#F0F4FF',
     tags: ['文财神', '投资', '理财', '智慧'],
     affinity: ['投资', '理财', '金融', '智慧'],
+    blessing: ['智慧理财 稳健增值', '文财加持 判断如神', '心明眼亮 投资顺遂'],
+    accessories: ['蓝水晶', '银质书签', '黑曜石手串'],
   },
   liuhai: {
     id: 'liuhai',
@@ -72,6 +80,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#F0FFF8',
     tags: ['偏财', '横财', '彩票', '娱乐'],
     affinity: ['偏财', '横财', '彩票', '娱乐'],
+    blessing: ['金蟾吐宝 偏财自来', '好运连连 惊喜不断', '戏蟾得财 妙手偶得'],
+    accessories: ['金蟾摆件', '绿幽灵水晶', '三足蟾吊坠'],
   },
   fanli: {
     id: 'fanli',
@@ -83,6 +93,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#F0FFF2',
     tags: ['创业', '经商', '智慧', '商业'],
     affinity: ['创业', '经商', '生意', '商业'],
+    blessing: ['三聚三散 进退有道', '商道酬信 财自远来', '顺势而为 满载而归'],
+    accessories: ['木质算盘', '绿檀手串', '翡翠平安扣'],
   },
   fulushou: {
     id: 'fulushou',
@@ -94,6 +106,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#F5F0FF',
     tags: ['家庭', '守财', '福禄', '稳定'],
     affinity: ['守财', '家庭', '稳定', '积累'],
+    blessing: ['福禄双全 阖家安康', '守财有道 岁岁有余', '三星高照 家和业兴'],
+    accessories: ['葫芦挂件', '黄水晶', '如意吊坠'],
   },
   heguan: {
     id: 'heguan',
@@ -105,6 +119,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#FFF4F0',
     tags: ['人脉', '贵人', '和合', '社交'],
     affinity: ['人脉', '贵人', '社交', '合作'],
+    blessing: ['贵人相助 左右逢源', '和气生财 人脉通达', '双仙护佑 合作共赢'],
+    accessories: ['粉水晶', '红玛瑙', '同心结'],
   },
   zhongkui: {
     id: 'zhongkui',
@@ -116,6 +132,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#F8F0FF',
     tags: ['辟邪', '护财', '小人', '化煞'],
     affinity: ['辟邪', '护财', '化煞', '阻碍'],
+    blessing: ['辟邪镇宅 小人退散', '钟馗在此 百煞不侵', '扫除障碍 财路畅通'],
+    accessories: ['朱砂吊坠', '桃木剑挂件', '黑曜石'],
   },
   shen: {
     id: 'shen',
@@ -127,6 +145,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#FFFDE7',
     tags: ['暴富', '急财', '偏财', '聚宝盆'],
     affinity: ['暴富', '急财', '偏财', '冒险'],
+    blessing: ['聚宝盆开 财源广聚', '胆大心细 富贵险中求', '急财速至 一鸣惊人'],
+    accessories: ['聚宝盆摆件', '金曜石', '五帝钱'],
   },
   huangcaishen: {
     id: 'huangcaishen',
@@ -138,6 +158,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#FFFDE7',
     tags: ['藏密', '修行', '佛教', '全财'],
     affinity: ['修行', '藏密', '佛教', '全财'],
+    blessing: ['黄财加持 资粮广积', '福慧双增 所求如愿', '财富圆满 广结善缘'],
+    accessories: ['黄财神唐卡', '菩提手串', '黄水晶'],
   },
   baicaishen: {
     id: 'baicaishen',
@@ -149,6 +171,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#F8F8F8',
     tags: ['藏密', '清债', '净化', '业障'],
     affinity: ['修行', '藏密', '还债', '净化'],
+    blessing: ['净障除贫 财路清明', '白财护佑 债消运开', '心清财聚 轻装前行'],
+    accessories: ['白水晶', '银饰', '菩提根手串'],
   },
   hongcaishen: {
     id: 'hongcaishen',
@@ -160,6 +184,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#FFF0EE',
     tags: ['藏密', '贸易', '商业', '热情'],
     affinity: ['修行', '藏密', '贸易', '商业'],
+    blessing: ['红财炽盛 贸易兴隆', '人缘广聚 财缘广开', '热忱经营 红红火火'],
+    accessories: ['红玛瑙', '红绳', '石榴石手串'],
   },
   lvdu: {
     id: 'lvdu',
@@ -171,6 +197,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#F0FFF0',
     tags: ['女性', '慈悲', '藏密', '事业'],
     affinity: ['女性', '修行', '藏密', '事业'],
+    blessing: ['度母慈悲 事业突破', '障碍消融 绿意生财', '护佑周全 心想事成'],
+    accessories: ['绿松石', '翡翠吊坠', '菩提子'],
   },
   zadji: {
     id: 'zadji',
@@ -182,6 +210,8 @@ export const GODS: Record<GodId, God> = {
     bgColor: '#FFF0F8',
     tags: ['女性', '藏地', '灵验', '事业'],
     affinity: ['女性', '藏密', '事业', '灵验'],
+    blessing: ['有求必应 财运亨通', '女神护佑 事业腾达', '心诚则灵 福至心灵'],
+    accessories: ['绿松石耳饰', '藏银手镯', '蜜蜡吊坠'],
   },
 };
 

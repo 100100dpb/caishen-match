@@ -6,25 +6,43 @@ import {
   Alert,
   ActivityIndicator,
   Dimensions,
-  Share,
-  Image,
+  ScrollView,
+  Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import * as MediaLibrary from 'expo-media-library';
-import { cacheDirectory, downloadAsync } from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
 import { GODS, GodId } from '../../constants/gods';
-import { buildWallpaperUrl } from '../../lib/wallpaperService';
+import {
+  composeParams,
+  WALLPAPER_WIDTH,
+  WALLPAPER_HEIGHT,
+  WALLPAPER_ASPECT,
+} from '../../lib/wallpaperComposer';
+import { WallpaperCanvas } from '../../components/WallpaperCanvas';
 
-const { width, height } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
+
+// 导出用画布逻辑宽度：430 × pixelRatio(3) ≈ 1290 物理像素
+const EXPORT_WIDTH = 430;
 
 export default function WallpaperDetailScreen() {
   const { godId } = useLocalSearchParams<{ godId: string }>();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const exportRef = useRef<View>(null);
+  const shareRef = useRef<View>(null);
 
   const god = godId ? GODS[godId as GodId] : undefined;
-  if (!god) {
+  const params = useMemo(
+    () => (god ? composeParams(god.id, new Date()) : null),
+    [god?.id]
+  );
+
+  if (!god || !params) {
     return (
       <View style={styles.center}>
         <Text>财神未找到</Text>
@@ -35,26 +53,37 @@ export default function WallpaperDetailScreen() {
     );
   }
 
-  const wallpaperUrl = buildWallpaperUrl(god.id);
+  async function captureView(ref: React.RefObject<View | null>): Promise<string> {
+    return captureRef(ref, {
+      format: 'png',
+      quality: 1,
+      width: WALLPAPER_WIDTH,
+      height: WALLPAPER_HEIGHT,
+    });
+  }
 
   async function saveWallpaper() {
     setSaving(true);
     try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
+      const { status, canAskAgain } = await MediaLibrary.requestPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('需要相册权限', '请在设置中允许访问相册以保存壁纸');
+        Alert.alert(
+          '需要相册权限',
+          '请允许访问相册以保存壁纸',
+          canAskAgain
+            ? undefined
+            : [
+                { text: '取消', style: 'cancel' },
+                { text: '去设置', onPress: () => Linking.openSettings() },
+              ]
+        );
         return;
       }
 
-      // Download and save
-      const localUri = await downloadImage(wallpaperUrl);
-      if (localUri) {
-        await MediaLibrary.saveToLibraryAsync(localUri);
-        Alert.alert('保存成功', `${god!.name}壁纸已保存到相册！`);
-      } else {
-        Alert.alert('提示', '壁纸图片尚未上传，敬请期待！');
-      }
-    } catch (e) {
+      const uri = await captureView(exportRef);
+      await MediaLibrary.saveToLibraryAsync(uri);
+      Alert.alert('保存成功', `${god!.name}壁纸已保存到相册！`);
+    } catch {
       Alert.alert('保存失败', '请稍后重试');
     } finally {
       setSaving(false);
@@ -62,108 +91,109 @@ export default function WallpaperDetailScreen() {
   }
 
   async function shareWallpaper() {
+    setSharing(true);
     try {
-      await Share.share({
-        message: `我的专属财神是【${god!.name}】— ${god!.title}\n${god!.description}\n\n来财神配对App测测你的财神 →`,
-        title: `${god!.name} 壁纸`,
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('提示', '当前设备不支持分享');
+        return;
+      }
+      const uri = await captureView(shareRef);
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: `${god!.name} · 财神配对`,
       });
-    } catch {}
+    } catch {
+      // 用户取消分享也会抛错，静默处理
+    } finally {
+      setSharing(false);
+    }
   }
+
+  const previewWidth = Math.min(screenWidth * 0.62, 280);
 
   return (
     <View style={styles.container}>
-      {/* Wallpaper Preview */}
-      <View style={[styles.preview, { backgroundColor: god.bgColor }]}>
-        <Image
-          source={{ uri: wallpaperUrl }}
-          style={styles.previewImage}
-          resizeMode="cover"
-          onError={() => {}} // silently fail
-        />
-        <View style={styles.previewOverlay}>
-          <Text style={[styles.previewName, { color: god.color }]}>{god.name}</Text>
-          <Text style={styles.previewTitle}>{god.title}</Text>
-          <Text style={styles.watermark}>财神配对</Text>
-        </View>
+      {/* 隐藏的导出画布（全尺寸捕获用） */}
+      <View style={styles.offscreen} pointerEvents="none">
+        <WallpaperCanvas ref={exportRef} params={params} width={EXPORT_WIDTH} />
+        <WallpaperCanvas ref={shareRef} params={params} width={EXPORT_WIDTH} showBrand />
       </View>
 
-      {/* Bottom Sheet */}
-      <View style={styles.sheet}>
-        <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
-          <Text style={styles.closeBtnText}>✕</Text>
-        </TouchableOpacity>
-
-        <Text style={[styles.sheetName, { color: god.color }]}>{god.name}</Text>
-        <Text style={styles.sheetTitle}>{god.title}</Text>
-        <Text style={styles.sheetDesc}>{god.description}</Text>
-
-        <View style={styles.tagRow}>
-          {god.tags.map(tag => (
-            <View key={tag} style={[styles.tag, { borderColor: god.color }]}>
-              <Text style={[styles.tagText, { color: god.color }]}>{tag}</Text>
-            </View>
-          ))}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* 壁纸预览 */}
+        <View style={styles.previewWrap}>
+          <View style={[styles.previewShadow, { width: previewWidth, height: previewWidth / WALLPAPER_ASPECT }]}>
+            <WallpaperCanvas params={params} width={previewWidth} />
+          </View>
         </View>
 
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={[styles.saveBtn, { backgroundColor: god.color }]}
-            onPress={saveWallpaper}
-            disabled={saving}
-          >
-            {saving ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.saveBtnText}>保存到相册</Text>
-            )}
+        {/* 信息区 */}
+        <View style={styles.sheet}>
+          <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
+            <Text style={styles.closeBtnText}>✕</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.shareBtn, { borderColor: god.color }]}
-            onPress={shareWallpaper}
-          >
-            <Text style={[styles.shareBtnText, { color: god.color }]}>分享</Text>
-          </TouchableOpacity>
+
+          <Text style={[styles.sheetName, { color: god.color }]}>{god.name}</Text>
+          <Text style={styles.sheetTitle}>{god.title}</Text>
+          <Text style={styles.sheetBlessing}>「{params.blessing}」</Text>
+          <Text style={styles.sheetDesc}>{god.description}</Text>
+
+          <View style={styles.tagRow}>
+            {god.tags.map(tag => (
+              <View key={tag} style={[styles.tag, { borderColor: god.color }]}>
+                <Text style={[styles.tagText, { color: god.color }]}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={[styles.saveBtn, { backgroundColor: god.color }]}
+              onPress={saveWallpaper}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.saveBtnText}>保存到相册</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.shareBtn, { borderColor: god.color }]}
+              onPress={shareWallpaper}
+              disabled={sharing}
+            >
+              {sharing ? (
+                <ActivityIndicator color={god.color} />
+              ) : (
+                <Text style={[styles.shareBtnText, { color: god.color }]}>分享</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
-async function downloadImage(url: string): Promise<string | null> {
-  try {
-    const filename = url.split('/').pop() || 'wallpaper.jpg';
-    const fileUri = `${cacheDirectory ?? ''}${filename}`;
-    const { uri } = await downloadAsync(url, fileUri);
-    return uri;
-  } catch {
-    return null;
-  }
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: '#171310' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
   back: { color: '#C9A84C', fontSize: 16 },
 
-  preview: {
-    height: height * 0.6,
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  previewImage: { position: 'absolute', width: '100%', height: '100%' },
-  previewOverlay: { alignItems: 'center' },
-  previewName: { fontSize: 72, fontWeight: '800', letterSpacing: 4 },
-  previewTitle: { fontSize: 16, color: '#555', marginTop: 8 },
-  watermark: {
-    position: 'absolute',
-    bottom: -height * 0.25,
-    right: 0,
-    fontSize: 11,
-    color: 'rgba(0,0,0,0.3)',
-    fontWeight: '600',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+  // 移出屏幕但保持已布局，供 view-shot 捕获
+  offscreen: { position: 'absolute', left: -9999, top: 0 },
+
+  scrollContent: { flexGrow: 1 },
+  previewWrap: { alignItems: 'center', paddingTop: 48, paddingBottom: 24 },
+  previewShadow: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
   },
 
   sheet: {
@@ -174,10 +204,11 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingTop: 20,
   },
-  closeBtn: { position: 'absolute', top: 16, right: 20, padding: 8 },
+  closeBtn: { position: 'absolute', top: 16, right: 20, padding: 8, zIndex: 1 },
   closeBtnText: { fontSize: 18, color: '#888' },
   sheetName: { fontSize: 28, fontWeight: '800', marginTop: 8 },
-  sheetTitle: { fontSize: 14, color: '#666', marginTop: 4, marginBottom: 8 },
+  sheetTitle: { fontSize: 14, color: '#666', marginTop: 4 },
+  sheetBlessing: { fontSize: 15, color: '#8B6914', fontWeight: '600', marginTop: 10, marginBottom: 6 },
   sheetDesc: { fontSize: 14, color: '#444', lineHeight: 22, marginBottom: 12 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
   tag: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },

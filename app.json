@@ -54,7 +54,8 @@
         {
           "photosPermission": "Allow 财神配对 to access your photos for outfit analysis."
         }
-      ]
+      ],
+      "expo-sharing"
     ]
   }
 }

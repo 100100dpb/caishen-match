@@ -1,5 +1,4 @@
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -19,7 +18,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return status === 'granted';
 }
 
-export async function scheduleDailyReminder(): Promise<void> {
+export async function scheduleDailyReminder(godName?: string): Promise<void> {
   // Cancel existing daily reminders
   await Notifications.cancelAllScheduledNotificationsAsync();
 
@@ -28,9 +27,10 @@ export async function scheduleDailyReminder(): Promise<void> {
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: '今日财神已就位 ',
+      title: godName ? `${godName}已就位` : '今日财神已就位',
       body: '点击查看今日专属财神壁纸，财运加持！',
       sound: false,
+      data: { url: '/' },
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,

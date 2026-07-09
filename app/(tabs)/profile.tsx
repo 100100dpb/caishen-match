@@ -10,7 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useUserStore } from '../../store/userStore';
 import { GODS } from '../../constants/gods';
-import { scheduleDailyReminder, cancelDailyReminder } from '../../lib/notifications';
+import { cancelDailyReminder } from '../../lib/notifications';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -20,9 +20,8 @@ export default function ProfileScreen() {
 
   async function toggleNotifications(value: boolean) {
     setNotificationsEnabled(value);
-    if (value) {
-      await scheduleDailyReminder();
-    } else {
+    // 开启时由根布局的 effect 统一调度（带财神名），这里只处理关闭
+    if (!value) {
       await cancelDailyReminder();
     }
   }

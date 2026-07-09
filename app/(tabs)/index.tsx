@@ -4,44 +4,30 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
-  ActivityIndicator,
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { useUserStore } from '../../store/userStore';
-import { getLunarInfo, LunarInfo } from '../../lib/lunarHelper';
-import { getManifest, getTodayWallpaper, WallpaperEntry, WallpaperManifest } from '../../lib/wallpaperService';
+import { getLunarInfo } from '../../lib/lunarHelper';
+import { composeParams } from '../../lib/wallpaperComposer';
+import { WallpaperCanvas } from '../../components/WallpaperCanvas';
 import { GODS } from '../../constants/gods';
-import { GodId } from '../../constants/gods';
 
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const router = useRouter();
   const { profile } = useUserStore();
-  const [lunar, setLunar] = useState<LunarInfo | null>(null);
-  const [manifest, setManifest] = useState<WallpaperManifest | null>(null);
-  const [wallpaper, setWallpaper] = useState<WallpaperEntry | null>(null);
-  const [loading, setLoading] = useState(true);
 
   const topGod = profile.godRanking[0];
   const god = topGod ? GODS[topGod.godId] : null;
 
-  useEffect(() => {
-    const info = getLunarInfo();
-    setLunar(info);
-
-    getManifest().then(m => {
-      setManifest(m);
-      if (topGod) {
-        const wp = getTodayWallpaper(topGod.godId, m);
-        setWallpaper(wp);
-      }
-      setLoading(false);
-    });
-  }, [topGod?.godId]);
+  const lunar = useMemo(() => getLunarInfo(), []);
+  const wallpaperParams = useMemo(
+    () => (god ? composeParams(god.id, new Date()) : null),
+    [god?.id]
+  );
 
   if (!profile.quizCompleted) {
     return (
@@ -84,37 +70,21 @@ export default function HomeScreen() {
       </View>
 
       {/* Today's Wallpaper Card */}
-      {loading ? (
-        <View style={styles.loadingCard}>
-          <ActivityIndicator color="#C9A84C" size="large" />
-          <Text style={styles.loadingText}>请财神降临中...</Text>
-        </View>
-      ) : god ? (
+      {god && wallpaperParams && (
         <TouchableOpacity
           style={styles.wallpaperCard}
           onPress={() => router.push(`/wallpaper/${god.id}`)}
           activeOpacity={0.9}
         >
-          <View style={[styles.wallpaperPlaceholder, { backgroundColor: god.bgColor }]}>
-            {wallpaper?.url ? (
-              <Image
-                source={{ uri: wallpaper.url }}
-                style={styles.wallpaperImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={styles.wallpaperFallback}>
-                <Text style={[styles.wallpaperGodName, { color: god.color }]}>{god.name}</Text>
-                <Text style={styles.wallpaperGodTitle}>{god.title}</Text>
-              </View>
-            )}
+          <View style={styles.wallpaperClip}>
+            <WallpaperCanvas params={wallpaperParams} width={width - 32} />
             <View style={styles.wallpaperOverlay}>
               <Text style={styles.wallpaperLabel}>今日专属壁纸</Text>
               <Text style={styles.wallpaperTap}>点击保存 / 分享</Text>
             </View>
           </View>
         </TouchableOpacity>
-      ) : null}
+      )}
 
       {/* God Info */}
       {god && (
@@ -160,7 +130,7 @@ export default function HomeScreen() {
         <View style={styles.lunarCard}>
           <Text style={styles.lunarTitle}>今日宜</Text>
           <Text style={styles.lunarText}>
-            {lunar.isAuspicious ? '今日为吉日，适合祈财、开业、签约' : '今日宜静守，勿大动财数'}
+            {lunar.isAuspicious ? '今日宜祭祀，适合拜财神、祈财纳福' : '今日宜静守，勿大动财数'}
           </Text>
           <Text style={styles.lunarGanZhi}>
             {lunar.yearGanZhi}年 {lunar.monthGanZhi}月 {lunar.dayGanZhi}日
@@ -214,23 +184,8 @@ const styles = StyleSheet.create({
   },
   outfitBtnText: { fontSize: 12, color: '#8B6914', fontWeight: '600' },
 
-  loadingCard: {
-    margin: 16,
-    height: 300,
-    borderRadius: 20,
-    backgroundColor: '#FFF8E7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  loadingText: { color: '#C9A84C', fontSize: 14 },
-
   wallpaperCard: { margin: 16, borderRadius: 20, overflow: 'hidden', elevation: 4, shadowColor: '#C9A84C', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
-  wallpaperPlaceholder: { height: width * 1.2, position: 'relative' },
-  wallpaperImage: { width: '100%', height: '100%', position: 'absolute' },
-  wallpaperFallback: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  wallpaperGodName: { fontSize: 64, fontWeight: '800' },
-  wallpaperGodTitle: { fontSize: 16, color: '#666', marginTop: 8 },
+  wallpaperClip: { height: width * 1.2, overflow: 'hidden', position: 'relative' },
   wallpaperOverlay: {
     position: 'absolute',
     bottom: 0,
