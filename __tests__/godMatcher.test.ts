@@ -12,15 +12,44 @@ describe('calculateMatch', () => {
     expect(result.topGods).toHaveLength(5);
   });
 
-  it('all matchPercent values are between 0 and 100', () => {
+  it('all matchPercent values stay within the 62-98 band', () => {
+    // Exhaustively try single-option sweeps to cover many combinations
+    for (let sweep = 0; sweep < 6; sweep++) {
+      const answers: Record<number, number> = {};
+      QUIZ_QUESTIONS.forEach((q, i) => {
+        answers[i] = Math.min(sweep, q.options.length - 1);
+      });
+      const result = calculateMatch(answers);
+      result.topGods.forEach(gs => {
+        expect(gs.matchPercent).toBeGreaterThanOrEqual(62);
+        expect(gs.matchPercent).toBeLessThanOrEqual(98);
+      });
+    }
+  });
+
+  it('top god never shows 100%', () => {
     const answers: Record<number, number> = {};
     QUIZ_QUESTIONS.forEach((_, i) => { answers[i] = 0; });
-
     const result = calculateMatch(answers);
-    result.topGods.forEach(gs => {
-      expect(gs.matchPercent).toBeGreaterThanOrEqual(0);
-      expect(gs.matchPercent).toBeLessThanOrEqual(100);
-    });
+    expect(result.topGods[0].matchPercent).toBeLessThan(100);
+  });
+
+  it('is deterministic — same answers always give the same result', () => {
+    const answers: Record<number, number> = {};
+    QUIZ_QUESTIONS.forEach((_, i) => { answers[i] = 1; });
+    expect(calculateMatch(answers)).toEqual(calculateMatch(answers));
+  });
+
+  it('ignores out-of-range question and option indices without throwing', () => {
+    const result = calculateMatch({ 0: 99, 99: 0, [-1]: 2 });
+    expect(result.topGods).toHaveLength(5);
+  });
+
+  it('topGods contains no duplicate gods', () => {
+    const answers: Record<number, number> = {};
+    QUIZ_QUESTIONS.forEach((_, i) => { answers[i] = 0; });
+    const ids = calculateMatch(answers).topGods.map(g => g.godId);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it('topGods are sorted by score descending', () => {

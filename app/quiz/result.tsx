@@ -21,7 +21,7 @@ export default function ResultScreen() {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>还没有测试结果</Text>
-        <TouchableOpacity style={styles.btn} onPress={() => router.push('/(tabs)/quiz')}>
+        <TouchableOpacity style={styles.btn} onPress={() => router.replace('/quiz')}>
           <Text style={styles.btnText}>去测试</Text>
         </TouchableOpacity>
       </View>
@@ -125,8 +125,11 @@ export default function ResultScreen() {
         })}
       </View>
 
-      {/* Retake */}
-      <TouchableOpacity style={styles.retakeBtn} onPress={() => router.push('/(tabs)/quiz')}>
+      {/* Done / Retake */}
+      <TouchableOpacity style={styles.doneBtn} onPress={() => router.replace('/(tabs)')}>
+        <Text style={styles.doneBtnText}>进入今日财神</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.retakeBtn} onPress={() => router.replace('/quiz')}>
         <Text style={styles.retakeBtnText}>重新测试</Text>
       </TouchableOpacity>
 
@@ -239,6 +242,15 @@ const styles = StyleSheet.create({
   rankBarFill: { height: '100%', borderRadius: 2 },
   rankPct: { fontSize: 12, color: '#888', width: 32, textAlign: 'right' },
 
+  doneBtn: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+    backgroundColor: '#C9A84C',
+    borderRadius: 24,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  doneBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   retakeBtn: {
     marginHorizontal: 16,
     borderWidth: 1,

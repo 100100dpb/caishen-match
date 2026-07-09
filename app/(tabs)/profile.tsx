@@ -38,7 +38,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: () => {
             reset();
-            router.replace('/(tabs)/index');
+            router.replace('/(tabs)');
           },
         },
       ]
@@ -61,15 +61,23 @@ export default function ProfileScreen() {
             <Text style={styles.godSummaryMetaText}>五行：{ELEMENT_NAMES[profile.favoredElement] || profile.favoredElement}</Text>
             <Text style={styles.godSummaryMetaText}>主求：{profile.primaryDesire}</Text>
           </View>
-          <TouchableOpacity
-            style={[styles.retakeBtn, { borderColor: god.color }]}
-            onPress={() => router.push('/(tabs)/quiz')}
-          >
-            <Text style={[styles.retakeBtnText, { color: god.color }]}>重新测试</Text>
-          </TouchableOpacity>
+          <View style={styles.godSummaryActions}>
+            <TouchableOpacity
+              style={[styles.retakeBtn, { borderColor: god.color }]}
+              onPress={() => router.push('/quiz/result')}
+            >
+              <Text style={[styles.retakeBtnText, { color: god.color }]}>我的财神</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.retakeBtn, { borderColor: god.color }]}
+              onPress={() => router.push('/quiz')}
+            >
+              <Text style={[styles.retakeBtnText, { color: god.color }]}>重新测试</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
-        <TouchableOpacity style={styles.startCard} onPress={() => router.push('/(tabs)/quiz')}>
+        <TouchableOpacity style={styles.startCard} onPress={() => router.push('/quiz')}>
           <Text style={styles.startCardText}>还没有测试？去找你的财神 →</Text>
         </TouchableOpacity>
       )}
@@ -150,6 +158,7 @@ const styles = StyleSheet.create({
   godSummaryTitle: { fontSize: 14, color: '#666', marginTop: 2 },
   godSummaryMeta: { flexDirection: 'row', gap: 16, marginTop: 8, marginBottom: 16 },
   godSummaryMetaText: { fontSize: 13, color: '#555' },
+  godSummaryActions: { flexDirection: 'row', gap: 10 },
   retakeBtn: {
     borderWidth: 1,
     borderRadius: 20,

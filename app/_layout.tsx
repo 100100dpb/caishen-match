@@ -18,6 +18,8 @@ export default function RootLayout() {
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="quiz/index" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="quiz/result" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="wallpaper/[godId]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="outfit/index" options={{ presentation: 'modal' }} />
       </Stack>

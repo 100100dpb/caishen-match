@@ -60,6 +60,30 @@ describe('userStore', () => {
     expect(result.current.profile.godRanking).toHaveLength(0);
   });
 
+  it('dailyGodCache returns ranking for the same date, null for another date', () => {
+    const { result } = renderHook(() => useUserStore());
+
+    act(() => { result.current.setDailyGodCache('2026-07-09', ['zhao', 'guan']); });
+    expect(result.current.getDailyRanking('2026-07-09')).toEqual(['zhao', 'guan']);
+    expect(result.current.getDailyRanking('2026-07-10')).toBeNull();
+  });
+
+  it('completeQuiz invalidates dailyGodCache', () => {
+    const { result } = renderHook(() => useUserStore());
+
+    act(() => { result.current.setDailyGodCache('2026-07-09', ['zhao']); });
+    act(() => { result.current.completeQuiz(mockRanking, 'fire', '正财'); });
+    expect(result.current.getDailyRanking('2026-07-09')).toBeNull();
+  });
+
+  it('reset clears dailyGodCache', () => {
+    const { result } = renderHook(() => useUserStore());
+
+    act(() => { result.current.setDailyGodCache('2026-07-09', ['zhao']); });
+    act(() => { result.current.reset(); });
+    expect(result.current.getDailyRanking('2026-07-09')).toBeNull();
+  });
+
   it('setBirthdate stores year/month/day', () => {
     const { result } = renderHook(() => useUserStore());
 

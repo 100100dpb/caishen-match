@@ -16,8 +16,16 @@ export interface UserProfile {
   birthDay?: number;
 }
 
+export interface DailyGodCache {
+  date: string; // 'YYYY-MM-DD'
+  ranking: GodId[];
+}
+
 interface UserStore {
   profile: UserProfile;
+  dailyGodCache: DailyGodCache | null;
+  setDailyGodCache: (date: string, ranking: GodId[]) => void;
+  getDailyRanking: (date: string) => GodId[] | null;
   setGodRanking: (ranking: GodScore[]) => void;
   setFavoredElement: (element: string) => void;
   setPrimaryDesire: (desire: string) => void;
@@ -38,8 +46,17 @@ const defaultProfile: UserProfile = {
 
 export const useUserStore = create<UserStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       profile: defaultProfile,
+      dailyGodCache: null,
+
+      setDailyGodCache: (date, ranking) =>
+        set({ dailyGodCache: { date, ranking } }),
+
+      getDailyRanking: (date) => {
+        const cache = get().dailyGodCache;
+        return cache && cache.date === date ? cache.ranking : null;
+      },
 
       setGodRanking: (ranking) =>
         set((s) => ({ profile: { ...s.profile, godRanking: ranking } })),
@@ -55,6 +72,7 @@ export const useUserStore = create<UserStore>()(
 
       completeQuiz: (ranking, element, desire) =>
         set((s) => ({
+          dailyGodCache: null, // 新测试结果使当日推荐失效
           profile: {
             ...s.profile,
             godRanking: ranking,
@@ -70,7 +88,7 @@ export const useUserStore = create<UserStore>()(
           profile: { ...s.profile, birthYear: year, birthMonth: month, birthDay: day },
         })),
 
-      reset: () => set({ profile: defaultProfile }),
+      reset: () => set({ profile: defaultProfile, dailyGodCache: null }),
     }),
     {
       name: 'caishen-user-profile',

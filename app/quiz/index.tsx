@@ -42,7 +42,7 @@ export default function QuizScreen() {
       // All done — calculate result
       const result = calculateMatch(newAnswers);
       completeQuiz(result.topGods, result.favoredElement, result.primaryDesire);
-      router.replace('/(tabs)/result');
+      router.replace('/quiz/result');
     }
   }
 
@@ -61,6 +61,13 @@ export default function QuizScreen() {
     <View style={styles.container}>
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
+        <TouchableOpacity
+          style={styles.closeBtn}
+          onPress={() => router.back()}
+          accessibilityLabel="关闭测试"
+        >
+          <Text style={styles.closeBtnText}>×</Text>
+        </TouchableOpacity>
         <View style={styles.progressBg}>
           <Animated.View
             style={[
@@ -148,6 +155,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressFill: { height: '100%', backgroundColor: '#C9A84C', borderRadius: 3 },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeBtnText: { fontSize: 26, color: '#B8A88A', lineHeight: 28 },
   progressText: { fontSize: 12, color: '#8B6914', width: 36, textAlign: 'right' },
 
   scroll: { flex: 1 },

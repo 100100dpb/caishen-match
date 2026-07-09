@@ -1,28 +1,20 @@
 // @ts-ignore — lunar-javascript has no type definitions
 import { Lunar, Solar } from 'lunar-javascript';
+import { getFestivalByKey, getFestivalBonus } from '../constants/festivals';
 
 export interface LunarInfo {
   month: number;
   day: number;
   festival: string | null;
+  isCaishenDay: boolean; // 迎财神/财神节
   term: string | null; // solar term / 节气
   yearGanZhi: string;
   monthGanZhi: string;
   dayGanZhi: string;
-  isAuspicious: boolean;
+  yi: string[]; // 今日宜
+  ji: string[]; // 今日忌
+  isAuspicious: boolean; // 宜祭祀 = 拜财神吉日
 }
-
-const MAJOR_FESTIVALS: Record<string, string> = {
-  '正月初一': '春节',
-  '正月十五': '元宵节',
-  '二月初二': '龙抬头',
-  '七月初七': '七夕',
-  '七月十五': '中元节',
-  '九月初九': '重阳节',
-  '腊月初八': '腊八节',
-  '腊月廿三': '小年',
-  '腊月廿四': '小年',
-};
 
 export function getLunarInfo(date: Date = new Date()): LunarInfo {
   const solar = Solar.fromDate(date);
@@ -31,23 +23,25 @@ export function getLunarInfo(date: Date = new Date()): LunarInfo {
   const monthName = lunar.getMonthInChinese();
   const dayName = lunar.getDayInChinese();
   const festivalKey = `${monthName}月${dayName}`;
-  const festival = MAJOR_FESTIVALS[festivalKey] || null;
+  const festival = getFestivalByKey(festivalKey);
 
   const term = lunar.getCurrentJieQi()?.getName() || null;
 
-  // Simple auspicious day check — avoid clash days
-  const dayZhi = lunar.getDayZhi();
-  const clashZhi = ['冲', '破', '害'];
-  const isAuspicious = !clashZhi.some(c => lunar.getDayNaYin()?.includes(c));
+  const yi: string[] = lunar.getDayYi() || [];
+  const ji: string[] = lunar.getDayJi() || [];
+  const isAuspicious = yi.some(item => item.includes('祭祀'));
 
   return {
     month: lunar.getMonth(),
     day: lunar.getDay(),
-    festival,
+    festival: festival?.name || null,
+    isCaishenDay: festival?.isCaishenDay || false,
     term,
     yearGanZhi: `${lunar.getYearGan()}${lunar.getYearZhi()}`,
     monthGanZhi: `${lunar.getMonthGan()}${lunar.getMonthZhi()}`,
-    dayGanZhi: `${lunar.getDayGan()}${dayZhi}`,
+    dayGanZhi: `${lunar.getDayGan()}${lunar.getDayZhi()}`,
+    yi,
+    ji,
     isAuspicious,
   };
 }
@@ -59,9 +53,4 @@ export function getLunarDayBonus(day: number): number {
   return 0;
 }
 
-export function getFestivalBonus(festival: string | null): number {
-  if (!festival) return 0;
-  if (festival === '春节') return 3;
-  if (['元宵节', '腊八节', '小年'].includes(festival)) return 2;
-  return 1;
-}
+export { getFestivalBonus };

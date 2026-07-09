@@ -23,23 +23,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon symbol="壁" label="今日" focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="quiz"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon symbol="测" label="测试" focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="result"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon symbol="缘" label="配对" focused={focused} />
+            <TabIcon symbol="财" label="今日" focused={focused} />
           ),
         }}
       />
