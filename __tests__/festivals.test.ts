@@ -11,8 +11,9 @@ function solarDateOfLunar(lunarYear: number, lunarMonth: number, lunarDay: numbe
 
 describe('festivals table', () => {
   it('contains the two caishen days with max bonus', () => {
-    expect(LUNAR_FESTIVALS['正月初五']).toEqual({ name: '迎财神', bonus: 3, isCaishenDay: true });
-    expect(LUNAR_FESTIVALS['七月廿二']).toEqual({ name: '财神节', bonus: 3, isCaishenDay: true });
+    expect(LUNAR_FESTIVALS['正月初五']).toMatchObject({ name: '迎财神', bonus: 3, isCaishenDay: true });
+    expect(LUNAR_FESTIVALS['七月廿二']).toMatchObject({ name: '财神节', bonus: 3, isCaishenDay: true });
+    expect(LUNAR_FESTIVALS['正月初五'].boostGods).toContain('zhao');
   });
 
   it('春节 has bonus 2, minor festivals bonus 1', () => {

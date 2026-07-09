@@ -7,10 +7,11 @@ import {
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useUserStore } from '../../store/userStore';
 import { getLunarInfo } from '../../lib/lunarHelper';
 import { composeParams } from '../../lib/wallpaperComposer';
+import { recommendToday, toDateKey } from '../../lib/recommender';
 import { WallpaperCanvas } from '../../components/WallpaperCanvas';
 import { GODS } from '../../constants/gods';
 
@@ -18,15 +19,26 @@ const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { profile } = useUserStore();
+  const { profile, setDailyGodCache } = useUserStore();
 
-  const topGod = profile.godRanking[0];
-  const god = topGod ? GODS[topGod.godId] : null;
+  const todayKey = toDateKey(new Date());
+  const recommendations = useMemo(
+    () => (profile.quizCompleted ? recommendToday(profile.godRanking, new Date()) : []),
+    [profile.godRanking, profile.quizCompleted, todayKey]
+  );
+  const todayRec = recommendations[0];
+  const god = todayRec ? GODS[todayRec.godId] : null;
 
-  const lunar = useMemo(() => getLunarInfo(), []);
+  useEffect(() => {
+    if (recommendations.length) {
+      setDailyGodCache(todayKey, recommendations.slice(0, 5).map(r => r.godId));
+    }
+  }, [todayKey, recommendations, setDailyGodCache]);
+
+  const lunar = useMemo(() => getLunarInfo(), [todayKey]);
   const wallpaperParams = useMemo(
     () => (god ? composeParams(god.id, new Date()) : null),
-    [god?.id]
+    [god?.id, todayKey]
   );
 
   if (!profile.quizCompleted) {
@@ -91,6 +103,15 @@ export default function HomeScreen() {
         <View style={[styles.godCard, { borderLeftColor: god.color }]}>
           <Text style={[styles.godCardName, { color: god.color }]}>{god.name}</Text>
           <Text style={styles.godCardTitle}>{god.title}</Text>
+          {todayRec.reasons.length > 0 && (
+            <View style={styles.reasonRow}>
+              {todayRec.reasons.map(reason => (
+                <View key={reason} style={styles.reasonChip}>
+                  <Text style={styles.reasonText}>{reason}</Text>
+                </View>
+              ))}
+            </View>
+          )}
           <Text style={styles.godCardDesc}>{god.description}</Text>
           <View style={styles.tagRow}>
             {god.tags.map(tag => (
@@ -215,6 +236,14 @@ const styles = StyleSheet.create({
   },
   godCardName: { fontSize: 22, fontWeight: '700' },
   godCardTitle: { fontSize: 14, color: '#666', marginTop: 2, marginBottom: 8 },
+  reasonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
+  reasonChip: {
+    backgroundColor: '#FFF3CD',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  reasonText: { fontSize: 11, color: '#8B6914', fontWeight: '600' },
   godCardDesc: { fontSize: 14, color: '#444', lineHeight: 20 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   tag: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
