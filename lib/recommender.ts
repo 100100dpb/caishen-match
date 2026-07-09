@@ -1,44 +1,14 @@
-import { GodId, GODS, GOD_LIST, Element } from '../constants/gods';
+import { GodId, GOD_LIST } from '../constants/gods';
 import { GodScore } from './godMatcher';
 import { getLunarInfo, getLunarDayBonus } from './lunarHelper';
 import { Festival, LUNAR_FESTIVALS } from '../constants/festivals';
+import { GENERATES, OVERCOMES, GAN_ELEMENT, ELEMENT_CN } from './wuxing';
 
 export interface DailyRecommendation {
   godId: GodId;
   score: number;
   reasons: string[]; // 推荐理由标签，展示用
 }
-
-// 五行相生：木生火 火生土 土生金 金生水 水生木
-const GENERATES: Record<Element, Element> = {
-  wood: 'fire',
-  fire: 'earth',
-  earth: 'metal',
-  metal: 'water',
-  water: 'wood',
-};
-
-// 五行相克：木克土 土克水 水克火 火克金 金克木
-const OVERCOMES: Record<Element, Element> = {
-  wood: 'earth',
-  earth: 'water',
-  water: 'fire',
-  fire: 'metal',
-  metal: 'wood',
-};
-
-// 日干 → 五行
-const GAN_ELEMENT: Record<string, Element> = {
-  甲: 'wood', 乙: 'wood',
-  丙: 'fire', 丁: 'fire',
-  戊: 'earth', 己: 'earth',
-  庚: 'metal', 辛: 'metal',
-  壬: 'water', 癸: 'water',
-};
-
-const ELEMENT_CN: Record<Element, string> = {
-  fire: '火', water: '水', wood: '木', earth: '土', metal: '金',
-};
 
 // 权重（总分 100）：基础匹配 40 + 农历日 20 + 节日 20 + 五行 20
 const BASE_WEIGHTS = [40, 32, 24, 16, 8]; // 测试排名 Top1-5

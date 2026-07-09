@@ -23,7 +23,6 @@
     ]
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
     "expo": "~55.0.5",
     "expo-file-system": "~55.0.10",
     "expo-image-picker": "~55.0.11",
@@ -37,6 +36,7 @@
     "lunar-javascript": "^1.7.7",
     "react": "19.2.0",
     "react-native": "0.83.2",
+    "react-native-image-colors": "^2.6.0",
     "react-native-view-shot": "4.0.3",
     "zustand": "^5.0.11"
   },
