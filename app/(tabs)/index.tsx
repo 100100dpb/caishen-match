@@ -73,7 +73,7 @@ export default function HomeScreen() {
             </Text>
           )}
         </View>
-        <TouchableOpacity onPress={() => router.push('/outfit/index')}>
+        <TouchableOpacity onPress={() => router.push('/outfit')}>
           <View style={styles.outfitBtn}>
             <Text style={styles.outfitBtnText}>穿搭</Text>
             <Text style={styles.outfitBtnText}>分析</Text>

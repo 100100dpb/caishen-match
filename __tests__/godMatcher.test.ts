@@ -45,6 +45,21 @@ describe('calculateMatch', () => {
     expect(result.topGods).toHaveLength(5);
   });
 
+  it('matchPercent never increases down the ranking', () => {
+    for (let sweep = 0; sweep < 6; sweep++) {
+      const answers: Record<number, number> = {};
+      QUIZ_QUESTIONS.forEach((q, i) => {
+        answers[i] = Math.min(sweep, q.options.length - 1);
+      });
+      const result = calculateMatch(answers);
+      for (let i = 1; i < result.topGods.length; i++) {
+        expect(result.topGods[i].matchPercent).toBeLessThanOrEqual(
+          result.topGods[i - 1].matchPercent
+        );
+      }
+    }
+  });
+
   it('topGods contains no duplicate gods', () => {
     const answers: Record<number, number> = {};
     QUIZ_QUESTIONS.forEach((_, i) => { answers[i] = 0; });

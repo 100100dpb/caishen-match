@@ -79,6 +79,12 @@ export function calculateMatch(answers: Record<number, number>): MatchResult {
     }))
     .sort((a, b) => b.score - a.score || a.godId.localeCompare(b.godId));
 
+  // 排名按原始分，但各财神理论满分不同会导致百分比与名次倒挂
+  // （如 #1 85% 排在 #2 87% 之上）——夹紧为沿名次单调不增
+  for (let i = 1; i < ranked.length; i++) {
+    ranked[i].matchPercent = Math.min(ranked[i].matchPercent, ranked[i - 1].matchPercent);
+  }
+
   const favoredElement =
     Object.entries(elementCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'earth';
   const primaryDesire =

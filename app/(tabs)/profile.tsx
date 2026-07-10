@@ -101,7 +101,7 @@ export default function ProfileScreen() {
       {/* Features */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>功能</Text>
-        <TouchableOpacity style={styles.featureRow} onPress={() => router.push('/outfit/index')}>
+        <TouchableOpacity style={styles.featureRow} onPress={() => router.push('/outfit')}>
           <View style={styles.featureInfo}>
             <Text style={styles.featureLabel}>穿搭分析</Text>
             <Text style={styles.featureDesc}>上传今日穿搭，分析与财神五行契合度</Text>
